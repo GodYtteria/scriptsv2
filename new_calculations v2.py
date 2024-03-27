@@ -317,36 +317,44 @@ def process_data(timeframe, input_file, output_file):
 
     return df  # Return the processed dataframe
 def assign_signal(score):
-    if score >= 5:
+    if score >= 5:  # Covers 5 and 6
         return 'Strong Buy'
-    elif 3 <= score < 4:
+    elif 3 <= score <= 4:  # Corrected to include both 3 and 4
         return 'Buy'
-    elif score in [-2, 2]:
+    elif score in [-2, -1, 1, 2]:  # Expanded to cover -1, 1
         return 'Neutral'
-    elif -3 < score <= -4:
+    elif score == 0:  # Specifically for Reversal
+        return 'Reversal'
+    elif -4 <= score <= -3:  # Corrected to include -3 and -4
         return 'Sell'
-    elif score <= -5:
+    elif score <= -5:  # Covers -5 and -6
         return 'Strong Sell'
     else:
-        return 'Reversal'
+        return 'Error'  # Fallback case, should not be reached based on current logic
+
 
 def assign_extreme_signal(score):
     global last_extreme_signal
-    if score >= 2.5:
+    if score >= 3:  # Adjusted to include scores +3 and above for Overbought
         last_extreme_signal = 'Overbought'
         return 'Overbought'
-    elif score <= -3:
+    elif score <= -3:  # Includes scores -3 and below for Oversold
         last_extreme_signal = 'Oversold'
         return 'Oversold'
     elif score == 0:
         if last_extreme_signal == 'Overbought':
-            return 'Oversold'
+            last_extreme_signal = 'Neutral'  # Reset to Neutral after reversal
+            return 'Oversold'  # Reversal to Oversold if last was Overbought
         elif last_extreme_signal == 'Oversold':
-            return 'Overbought'
+            last_extreme_signal = 'Neutral'  # Reset to Neutral after reversal
+            return 'Overbought'  # Reversal to Overbought if last was Oversold
         else:
-            return 'Neutral'
+            return 'Neutral'  # No extreme condition before, so stay Neutral
     else:
-        return 'Neutral'
+        return 'Neutral'  # For scores within +2 to -2
+
+# Initialize the global variable before using the function
+last_extreme_signal = 'Neutral'  # Assuming starting point is Neutral
 
 def adjust_dataframe(df, timeframe):
     if timeframe == '1h':
