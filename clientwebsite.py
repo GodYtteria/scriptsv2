@@ -232,5 +232,5 @@ def update_graph(selected_symbol, selected_data):
     return fig_candlestick, fig_extreme_candlestick
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=8080)
 
