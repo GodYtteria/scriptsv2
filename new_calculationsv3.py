@@ -229,13 +229,13 @@ def assign_signal(score):
     elif score >= 5.5:
         return 'Strong Buy'
     elif score >= 4.5:
-        return 'Buy'
+        return 'Strong Buy'
     elif score >= 3.5:
-        return 'Neutral'
+        return 'Buy'
     elif score >= 2.5:
         return 'Neutral'
     elif score >= 1.5:
-        return 'Buy' if score % 1 == 0.5 else 'Neutral'  # Rounding off positive 0.5 scores
+        return 'Neutral' if score % 1 == 0.5 else 'Neutral'  # Rounding off positive 0.5 scores
     elif score >= 0.5:
         return 'Neutral'
     elif score >= -0.5:
@@ -249,7 +249,7 @@ def assign_signal(score):
     elif score >= -4.5:
         return 'Sell'
     elif score >= -5.5:
-        return 'Sell'
+        return 'Strong Sell'
     elif score >= -6:
         return 'Strong Sell'
     elif score < -6:
@@ -262,7 +262,7 @@ def assign_extreme_signal(score):
     if score >= 5:
         last_extreme_signal = 'Overbought'
         return 'Overbought'
-    elif score <= -5:
+    elif score <= -4.5:
         last_extreme_signal = 'Oversold'
         return 'Oversold'
     else:

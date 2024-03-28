@@ -9,14 +9,17 @@ import os
 app = dash.Dash(__name__)
 
 app.title = 'Syrius Magic Monitor'
-app.index_string = '<html><head><link rel="icon" type="image/x-icon" href="data:image/x-icon;,"></head><body>' + app.index_string + '</body></html>'
 
+# Define the URL for the favicon
+favicon_url = "/static/favicon.ico"
+# Set the favicon
+app.index_string = f'<html><head><link rel="icon" type="image/x-icon" href="{favicon_url}"></head><body>' + app.index_string + '</body></html>'
 
 # Configure cache
 cache = Cache(app.server, config={
     'CACHE_TYPE': 'filesystem',  # Use 'simple' for in-memory caching
     'CACHE_DIR': 'cache-directory',  # Specify the directory to store cache files if using filesystem cache
-    'CACHE_THRESHOLD': 10000  # The maximum number of items the cache will store
+    'CACHE_THRESHOLD': 5000  # The maximum number of items the cache will store
 })
 
 CACHE_TIMEOUT = 60  # Time in seconds for cache to refresh
@@ -54,7 +57,7 @@ symbols = daily_data['Symbol'].unique()
 
 # Define the layout
 app.layout = html.Div([
-    html.H1('Cryptocurrency Data Visualization (UTC)', style={'text-align': 'center'}),
+    html.H1('Syrius Magic Monitor : Timezone (UTC)', style={'text-align': 'center'}),
     dcc.Dropdown(id='symbol-dropdown', options=[{'label': symbol, 'value': symbol} for symbol in symbols], value='BTC/USDT', style={'margin': 'auto', 'width': '50%'}),
     dcc.Dropdown(id='data-dropdown', options=[{'label': label, 'value': value} for label, value in [('3 Hour Data', 'hourly'), ('Daily Data', 'daily'), ('3 Day Data', 'threeday'),('Weekly Data', 'weekly')]], value='hourly', style={'margin': 'auto', 'width': '50%'}),
     html.Div([
@@ -159,8 +162,8 @@ def update_graph(selected_symbol, selected_data):
         prev_signal = signal
         prev_date = date
 
-    fig_candlestick.add_trace(go.Scatter(x=strong_buy_signals['Date'], y=strong_buy_signals['PRICE'], mode='lines', name='Buy', line=dict(color='green', width=2), showlegend=True))
-    fig_candlestick.add_trace(go.Scatter(x=strong_sell_signals['Date'], y=strong_sell_signals['PRICE'], mode='lines', name='Sell', line=dict(color='red', width=2), showlegend=True))
+    fig_candlestick.add_trace(go.Scatter(x=strong_buy_signals['Date'], y=strong_buy_signals['PRICE'], mode='lines', name='Strong Buy', line=dict(color='green', width=2), showlegend=True))
+    fig_candlestick.add_trace(go.Scatter(x=strong_sell_signals['Date'], y=strong_sell_signals['PRICE'], mode='lines', name='Strong Sell', line=dict(color='red', width=2), showlegend=True))
 
     # Add annotations for buy and sell signals
     for _, row in buy_signals.iterrows():
