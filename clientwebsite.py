@@ -2,7 +2,6 @@ import dash
 from dash import dcc, html, dash_table, Input, Output
 import plotly.graph_objs as go
 import pandas as pd
-from flask_caching import Cache
 import os
 
 # Initialize the Dash app
@@ -11,46 +10,25 @@ app = dash.Dash(__name__)
 app.title = 'Syrius Magic Monitor'
 
 # Define the URL for the favicon
-favicon_url = "/static/favicon.ico"
+favicon_url = "favicon.ico"
 # Set the favicon
 app.index_string = f'<html><head><link rel="icon" type="image/x-icon" href="{favicon_url}"></head><body>' + app.index_string + '</body></html>'
 
-# Configure cache
-cache = Cache(app.server, config={
-    'CACHE_TYPE': 'filesystem',  # Use 'simple' for in-memory caching
-    'CACHE_DIR': 'cache-directory',  # Specify the directory to store cache files if using filesystem cache
-    'CACHE_THRESHOLD': 5000  # The maximum number of items the cache will store
-})
+# Load the CSV files
+hourly_data = pd.read_csv('1h_Crypto_Monitor_List.csv')
+daily_data = pd.read_csv('1d_Crypto_Monitor_List.csv')
+threeday_data = pd.read_csv('3d_Crypto_Monitor_List.csv')
+weekly_data = pd.read_csv('1w_Crypto_Monitor_List.csv')
+# Convert 'Date' column to datetime if not already in datetime format
+for data in [daily_data, hourly_data, threeday_data, weekly_data]: 
+    data['Date'] = pd.to_datetime(data['Date'])
 
-CACHE_TIMEOUT = 60  # Time in seconds for cache to refresh
+# Sort the data by date in descending order
+for data in [daily_data, hourly_data, threeday_data, weekly_data]:
+    data.sort_values('Date', inplace=True, ascending=False)
 
-def load_csv_data():
-    # Check if CSV data is in cache
-    cached_data = cache.get('csv_data')
-    if cached_data is not None:
-        return cached_data
-    else:
-        # Load the CSV files
-        hourly_data = pd.read_csv('1h_Crypto_Monitor_List.csv')
-        daily_data = pd.read_csv('1d_Crypto_Monitor_List.csv')
-        threeday_data = pd.read_csv('3d_Crypto_Monitor_List.csv')
-        weekly_data = pd.read_csv('1w_Crypto_Monitor_List.csv')
-
-        # Convert 'Date' column to datetime if not already in datetime format
-        for data in [daily_data, hourly_data, threeday_data, weekly_data]: 
-            data['Date'] = pd.to_datetime(data['Date'])
-
-        # Sort the data by date in descending order
-        for data in [daily_data, hourly_data, threeday_data, weekly_data]:
-            data.sort_values('Date', inplace=True, ascending=False)
-
-        # Cache the loaded data
-        cache.set('csv_data', (hourly_data, daily_data, threeday_data, weekly_data), timeout=CACHE_TIMEOUT)
-        
-        return hourly_data, daily_data, threeday_data, weekly_data
-
-# Replace direct CSV loading in your app with a call to load_csv_data()
-hourly_data, daily_data, threeday_data, weekly_data = load_csv_data()
+# Get unique symbols
+symbols = daily_data['Symbol'].unique()
 
 # Get unique symbols
 symbols = daily_data['Symbol'].unique()
