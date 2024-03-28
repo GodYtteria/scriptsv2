@@ -30,9 +30,6 @@ for data in [daily_data, hourly_data, threeday_data, weekly_data]:
 # Get unique symbols
 symbols = daily_data['Symbol'].unique()
 
-# Get unique symbols
-symbols = daily_data['Symbol'].unique()
-
 # Define the layout
 app.layout = html.Div([
     html.H1('Syrius Magic Monitor : Timezone (UTC)', style={'text-align': 'center'}),
