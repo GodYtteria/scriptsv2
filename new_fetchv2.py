@@ -70,10 +70,7 @@ def merge_and_update_data(new_data, existing_data, timeframe):
     return updated_df
 
 # List of symbols to fetch data for
-symbols = ['USDT/IDRT', 'USDT/BIDR', 'USDT/TRY', 'USDT/ARS', 'BTC/USDT', 'ETH/USDT', 'USDC/USDT', 'FDUSD/USDT',
-           'SOL/USDT', 'DOGE/USDT', 'SHIB/USDT', 'PEPE/USDT', 'WIF/USDT', 'ETHFI/USDT', 'XRP/USDT', 'BNB/USDT',
-           'FET/USDT', 'BOME/USDT', 'SUI/USDT', 'LTC/USDT', 'NEAR/USDT', 'ICP/USDT', 'RUNE/USDT', 'AVAX/USDT',
-           'APT/USDT', 'FLOKI/USDT', 'T/USDT', 'FTM/USDT', 'ARB/USDT', 'POLYX/USDT']
+symbols = ['BTC/USDT', 'ETH/USDT', 'BCH/USDT', 'AAVE/USDT', 'INJ/USDT', 'OP/USDT', 'ARB/USDT', 'SUI/USDT', 'SOL/USDT', 'ETH/BTC', 'BNB/USDT', 'LINK/USDT', 'ADA/USDT', 'DOT/USDT', 'FTT/USDT', 'XRP/USDT', 'MATIC/USDT', 'AVAX/USDT', 'TRX/USDT', 'RONIN/USDT', 'BEAMX/USDT', 'SUPER/USDT', 'AGIX/USDT', 'GALA/USDT', 'LQTY/USDT', 'ICP/USDT', 'TIA/USDT', 'NTRN/USDT', 'PENDLE/USDT', 'AXL/USDT', 'IMX/USDT', 'RNDR/USDT', 'DOGE/USDT', 'SHIB/USDT', 'PEPE/USDT', 'MEME/USDT', 'SKL/USDT']
 
 # Dictionary of timeframes and corresponding CSV filenames
 timeframes = {'1h': '1h_crypto_data.csv', '12h': '1d_crypto_data.csv', '1d': '3d_crypto_data.csv','3d': '1w_crypto_data.csv'}
