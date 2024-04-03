@@ -195,12 +195,27 @@ def process_data(timeframe, input_file, output_file, merged_data=None):
         print(f"No input file found for {timeframe}, skipping...")
         return
     
+    try:
+        # Attempt to read the CSV file
+        df = pd.read_csv(input_file)
+    except pd.errors.ParserError as e:
+        print(f"Error parsing CSV file for {timeframe}: {e}")
+        print("Attempting to fix CSV file...")
+        try:
+            # Read the CSV file while ignoring lines with too many fields
+            df = pd.read_csv(input_file, error_bad_lines=False)
+            print("CSV file fixed successfully.")
+        except Exception as e:
+            print(f"Error fixing CSV file for {timeframe}: {e}")
+            return
+    
     ta, df = TA(), pd.read_csv(input_file)
     df.rename(columns={'Open': 'OPEN', 'High': 'HIGH', 'Low': 'LOW', 'Close': 'CLOSE'}, inplace=True)
     df['OPEN'], df['HIGH'], df['LOW'], df['CLOSE'] = df['OPEN'].astype(float), df['HIGH'].astype(float), df['LOW'].astype(float), df['CLOSE'].astype(float)
     df['MA_Score'], df['MACD_Score'], df['LL'], df['Trender'], df['DMI'], df['Engulf'], df['RSI_Score'], df['Demark'] = ta.MA(df['CLOSE']), ta.MACD(df['CLOSE']), ta.LL(df['HIGH'], df['LOW'], df['CLOSE']), ta.Trender(df['HIGH'], df['LOW'], df['CLOSE']), ta.DMI(df['HIGH'], df['LOW'], df['CLOSE']).fillna(0), ta.Engulf(df, df['OPEN'], df['HIGH'], df['LOW'], df['CLOSE']), ta.RSI(df['CLOSE']), ta.Demark(df['HIGH'], df['LOW'], df['CLOSE'])
     df['Scores'] = df[['MA_Score', 'MACD_Score', 'LL', 'Trender', 'DMI', 'Engulf']].sum(axis=1)
-    df['Extreme Scores'] = df[['MA_Score','MACD_Score','Trender', 'DMI','RSI_Score', 'LL', 'Engulf', 'Demark']].sum(axis=1)
+    df['Extreme Scores'] = df[['RSI_Score', 'LL', 'Engulf', 'Demark']].sum(axis=1)
+    #df[['MA_Score','MACD_Score','Trender', 'DMI','RSI_Score', 'LL', 'Engulf', 'Demark']].sum(axis=1)
     df['Signal'], df['Extreme Signal'] = df['Scores'].apply(lambda x: assign_signal(x)), df['Extreme Scores'].apply(lambda x: assign_extreme_signal(x))
     df.rename(columns={'CLOSE': 'PRICE'}, inplace=True)
 
@@ -245,9 +260,9 @@ def assign_signal(score):
     elif score >= -2.5:
         return 'Neutral'
     elif score >= -3.5:
-        return 'Neutral'
+        return 'Selll'
     elif score >= -4.5:
-        return 'Sell'
+        return 'Strong Sell'
     elif score >= -5.5:
         return 'Strong Sell'
     elif score >= -6:
@@ -259,10 +274,10 @@ def assign_signal(score):
 
 def assign_extreme_signal(score):
     global last_extreme_signal
-    if score >= 5:
+    if score >= 2:
         last_extreme_signal = 'Overbought'
         return 'Overbought'
-    elif score <= -4.5:
+    elif score <= -2:
         last_extreme_signal = 'Oversold'
         return 'Oversold'
     else:
@@ -279,24 +294,33 @@ def read_existing_data(filepath):
 
         if existing_data.empty or 'Date' not in existing_data.columns:
             print(f"Existing data file {filepath} is empty or missing 'Date' column.")
-            return pd.DataFrame()
+            return pd.DataFrame(), False  # Return a flag indicating that existing data is not found
         else:
-            return existing_data
+            last_date = existing_data['Date'].iloc[-1]  # Get the last date in the existing data
+            print(f"Found existing data up to {last_date} in {filepath}.")
+            return existing_data, True  # Return a flag indicating that existing data is found
     except FileNotFoundError:
         print(f"Existing data file {filepath} not found.")
-        return pd.DataFrame()
+        return pd.DataFrame(), False  # Return a flag indicating that existing data is not found
     except Exception as e:
         print(f"Error reading existing data file {filepath}: {e}")
-        return pd.DataFrame()
-
-
-
+        return pd.DataFrame(), False  # Return a flag indicating that existing data is not found
+    
 async def fetch_calculate_update(input_files, output_files):
     for timeframe, filepath in output_files.items():
         print(f"Output file path for {timeframe}: {filepath}")
         
-        existing_data = read_existing_data(filepath)
+        existing_data, existing_data_found = read_existing_data(filepath)
+        
         input_data = pd.read_csv(input_files[timeframe])
+        
+        if not existing_data_found:
+            # If existing data is not found, delete the output file
+            try:
+                os.remove(filepath)
+                print(f"Deleted {filepath} as existing data is not found.")
+            except FileNotFoundError:
+                pass
         
         new_data_available = False
         if not existing_data.empty:
@@ -329,8 +353,8 @@ async def fetch_calculate_update(input_files, output_files):
 async def main():
     input_files = {'1h': '1h_crypto_data.csv', '12h': '1d_crypto_data.csv', '1d': '3d_crypto_data.csv', '3d': '1w_crypto_data.csv'}
     output_files = {'1h': '1h_Crypto_Monitor_List.csv', '12h': '1d_Crypto_Monitor_List.csv', '1d': '3d_Crypto_Monitor_List.csv', '3d': '1w_Crypto_Monitor_List.csv'}
-    
-    # Print output file paths
+
+ # Print output file paths
     for timeframe, filepath in output_files.items():
         print(f"Output file path for {timeframe}: {filepath}")
 
