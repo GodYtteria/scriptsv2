@@ -1,8 +1,8 @@
 import dash
-from dash import dcc, html, dash_table, Input, Output
+from dash import dcc, html, dash_table
 import plotly.graph_objs as go
 import pandas as pd
-import os
+from dash.dependencies import Input, Output
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
@@ -14,33 +14,40 @@ favicon_url = "favicon.ico"
 # Set the favicon
 app.index_string = f'<html><head><link rel="icon" type="image/x-icon" href="{favicon_url}"></head><body>' + app.index_string + '</body></html>'
 
-# Load the CSV files
-hourly_data = pd.read_csv('1h_Crypto_Monitor_List.csv')
-daily_data = pd.read_csv('1d_Crypto_Monitor_List.csv')
-threeday_data = pd.read_csv('3d_Crypto_Monitor_List.csv')
-weekly_data = pd.read_csv('1w_Crypto_Monitor_List.csv')
-# Convert 'Date' column to datetime if not already in datetime format
-for data in [daily_data, hourly_data, threeday_data, weekly_data]: 
-    data['Date'] = pd.to_datetime(data['Date'])
+# Function to load CSV files
+def load_csv_data():
+    hourly_data = pd.read_csv('1h_Crypto_Monitor_List.csv')
+    daily_data = pd.read_csv('1d_Crypto_Monitor_List.csv')
+    threeday_data = pd.read_csv('3d_Crypto_Monitor_List.csv')
+    weekly_data = pd.read_csv('1w_Crypto_Monitor_List.csv')
+    
+    # Convert 'Date' column to datetime if not already in datetime format
+    for data in [daily_data, hourly_data, threeday_data, weekly_data]: 
+        data['Date'] = pd.to_datetime(data['Date'])
+    
+    # Sort the data by date in descending order
+    for data in [daily_data, hourly_data, threeday_data, weekly_data]:
+        data.sort_values('Date', inplace=True, ascending=False)
+    
+    return hourly_data, daily_data, threeday_data, weekly_data
 
-# Sort the data by date in descending order
-for data in [daily_data, hourly_data, threeday_data, weekly_data]:
-    data.sort_values('Date', inplace=True, ascending=False)
+# Load the CSV files initially
+hourly_data, daily_data, threeday_data, weekly_data = load_csv_data()
 
 # Get unique symbols
 symbols = daily_data['Symbol'].unique()
 
 # Define the layout
 app.layout = html.Div([
-    html.H1('Syrius Magic Monitor : Timezone (UTC)', style={'text-align': 'center'}),
+    html.H1('Syrius Magic Monitor (Timezone:Asia/Singapore (GMT+8)', style={'text-align': 'center'}),
     dcc.Dropdown(id='symbol-dropdown', options=[{'label': symbol, 'value': symbol} for symbol in symbols], value='BTC/USDT', style={'margin': 'auto', 'width': '50%'}),
     dcc.Dropdown(id='data-dropdown', options=[{'label': label, 'value': value} for label, value in [('3 Hour Data', 'hourly'), ('Daily Data', 'daily'), ('3 Day Data', 'threeday'),('Weekly Data', 'weekly')]], value='hourly', style={'margin': 'auto', 'width': '50%'}),
     html.Div([
-    html.H1("Scores Signals"),
-    dcc.Graph(id='crypto-graph', config={'displayModeBar': True}),
-    html.H1("Extreme Scores Signals"),
-    dcc.Graph(id='extreme-graph', config={'displayModeBar': True})
-], style={'display': 'flex', 'flex-direction': 'column'}),
+        html.H1("Scores Signals"),
+        dcc.Graph(id='crypto-graph', config={'displayModeBar': True}),
+        html.H1("Extreme Scores Signals"),
+        dcc.Graph(id='extreme-graph', config={'displayModeBar': True})
+    ], style={'display': 'flex', 'flex-direction': 'column'}),
 
     html.H3("3 Hour Signal (Buy/Sell/Strong Buy/Strong Sell)", style={'text-align': 'center'}),
     dash_table.DataTable(id='data-table-1h', columns=[{"name": i, "id": i} for i in hourly_data.columns if i in ['Date', 'Category', 'Symbol','Signal','Signal', 'Extreme Signal', 'PRICE']], data=hourly_data.assign(Date=lambda x: x['Date'].dt.strftime('%B %d, %Y %I:%M %p')).to_dict('records')
@@ -65,16 +72,22 @@ app.layout = html.Div([
     dash_table.DataTable(id='data-table-weekly', columns=[{"name": i, "id": i} for i in weekly_data.columns if i in ['Date', 'Category', 'Symbol', 'Signal', 'Extreme Signal', 'PRICE']], data=weekly_data.assign(Date=lambda x: x['Date'].dt.strftime('%B %d, %Y %I:%M %p')).to_dict('records'), filter_action="native", page_action="native", page_size=10, style_table={'margin': 'auto', 'width': '80%', 'maxWidth': '1200px'}, style_data_conditional=[{'if': {'filter_query': '{Signal} = "Sell"'},'backgroundColor': 'rgb(255, 165, 0)','color': 'black'},{'if': {'filter_query': '{Signal} = "Buy"'},
  'backgroundColor': 'rgb(144, 238, 144)','color': 'black'},{'if': {'filter_query': '{Signal} = "Strong Sell" or {Extreme Signal} = "Oversold"'},
  'backgroundColor': 'rgb(255, 0, 0)','color': 'black'},{'if': {'filter_query': '{Signal} = "Strong Buy" or {Extreme Signal} = "Overbought"'},
- 'backgroundColor': 'rgb(0, 128, 0)','color': 'black'}], style_cell={'textAlign': 'center'})
+ 'backgroundColor': 'rgb(0, 128, 0)','color': 'black'}], style_cell={'textAlign': 'center'}),
+
+    # No Interval component here
+
 ])
 
 @app.callback(
     [Output('crypto-graph', 'figure'),
      Output('extreme-graph', 'figure')],
     [Input('symbol-dropdown', 'value'),
-     Input('data-dropdown', 'value')])
-
+     Input('data-dropdown', 'value')]
+)
 def update_graph(selected_symbol, selected_data):
+
+    # Load the CSV files
+    hourly_data, daily_data, threeday_data, weekly_data = load_csv_data()
     # Filter data based on selected symbol
     data_dict = {'hourly': hourly_data, 'daily': daily_data, 'threeday': threeday_data, 'weekly': weekly_data}
     data = data_dict[selected_data]
@@ -205,7 +218,8 @@ def update_graph(selected_symbol, selected_data):
     )
 
     return fig_candlestick, fig_extreme_candlestick
-
+    # Returning empty figures for now
+    return {}, {}
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8080)
+    app.run_server(debug=False, host='127.0.0.1', port=8080)
 
