@@ -14,11 +14,11 @@ def fetch_data(symbol, timeframe, binance):
     print(f"Fetching OHLCV data for {symbol} - {timeframe}...")
     ohlcv = binance.fetch_ohlcv(symbol, timeframe)
     data = []
-    utc_zone = pytz.utc
+    gmt_plus_8 = pytz.timezone('Asia/Singapore')
     # Convert timestamp to datetime and store data in a list of dictionaries
     for entry in ohlcv:
         timestamp = entry[0]
-        dt_object = datetime.fromtimestamp(timestamp / 1000, tz=utc_zone)
+        dt_object = datetime.fromtimestamp(timestamp / 1000, tz=gmt_plus_8)
         data.append({
             'Date': dt_object.strftime('%Y-%m-%d %H:%M:%S'),
             'Category': 'Crypto',
