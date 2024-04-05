@@ -3,6 +3,8 @@ from dash import dcc, html, dash_table
 import plotly.graph_objs as go
 import pandas as pd
 from dash.dependencies import Input, Output
+from pandas.errors import ParserError
+
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
@@ -14,13 +16,16 @@ favicon_url = "favicon.ico"
 # Set the favicon
 app.index_string = f'<html><head><link rel="icon" type="image/x-icon" href="{favicon_url}"></head><body>' + app.index_string + '</body></html>'
 
-# Function to load CSV files
 def load_csv_data():
-    hourly_data = pd.read_csv('1h_Crypto_Monitor_List.csv')
-    daily_data = pd.read_csv('1d_Crypto_Monitor_List.csv')
-    threeday_data = pd.read_csv('3d_Crypto_Monitor_List.csv')
-    weekly_data = pd.read_csv('1w_Crypto_Monitor_List.csv')
-    
+    try:
+        hourly_data = pd.read_csv('1h_Crypto_Monitor_List.csv')
+        daily_data = pd.read_csv('1d_Crypto_Monitor_List.csv')
+        threeday_data = pd.read_csv('3d_Crypto_Monitor_List.csv')
+        weekly_data = pd.read_csv('1w_Crypto_Monitor_List.csv')
+    except ParserError as e:
+        print("Error parsing CSV file:", e)
+        return None, None, None, None
+
     # Convert 'Date' column to datetime if not already in datetime format
     for data in [daily_data, hourly_data, threeday_data, weekly_data]: 
         data['Date'] = pd.to_datetime(data['Date'])
@@ -43,9 +48,9 @@ app.layout = html.Div([
     dcc.Dropdown(id='symbol-dropdown', options=[{'label': symbol, 'value': symbol} for symbol in symbols], value='BTC/USDT', style={'margin': 'auto', 'width': '50%'}),
     dcc.Dropdown(id='data-dropdown', options=[{'label': label, 'value': value} for label, value in [('3 Hour Data', 'hourly'), ('Daily Data', 'daily'), ('3 Day Data', 'threeday'),('Weekly Data', 'weekly')]], value='hourly', style={'margin': 'auto', 'width': '50%'}),
     html.Div([
-        html.H1("Scores Signals"),
+        html.H1("New Signals"),
         dcc.Graph(id='crypto-graph', config={'displayModeBar': True}),
-        html.H1("Extreme Scores Signals"),
+        html.H1("Extreme Signals"),
         dcc.Graph(id='extreme-graph', config={'displayModeBar': True})
     ], style={'display': 'flex', 'flex-direction': 'column'}),
 
