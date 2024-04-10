@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Activate the virtual environment
-source /home/rdpuser/scripts/scriptsv2-main/myenv/bin/activate
+source /home/rdpuser/scripts/scriptsv2-main/venv/bin/activate
 
 # Change directory to the script location
 cd /home/rdpuser/scripts/scriptsv2-main/
