@@ -213,11 +213,11 @@ def process_data(timeframe, input_file, output_file, merged_data=None):
     df.rename(columns={'Open': 'OPEN', 'High': 'HIGH', 'Low': 'LOW', 'Close': 'CLOSE'}, inplace=True)
     df['OPEN'], df['HIGH'], df['LOW'], df['CLOSE'] = df['OPEN'].astype(float), df['HIGH'].astype(float), df['LOW'].astype(float), df['CLOSE'].astype(float)
     df['MA_Score'], df['MACD_Score'], df['LL'], df['Trender'], df['DMI'], df['Engulf'], df['RSI_Score'], df['Demark'] = ta.MA(df['CLOSE']), ta.MACD(df['CLOSE']), ta.LL(df['HIGH'], df['LOW'], df['CLOSE']), ta.Trender(df['HIGH'], df['LOW'], df['CLOSE']), ta.DMI(df['HIGH'], df['LOW'], df['CLOSE']).fillna(0), ta.Engulf(df, df['OPEN'], df['HIGH'], df['LOW'], df['CLOSE']), ta.RSI(df['CLOSE']), ta.Demark(df['HIGH'], df['LOW'], df['CLOSE'])
-    df['Scores'] = df[['MA_Score', 'MACD_Score', 'LL', 'Trender', 'DMI', 'Engulf']].sum(axis=1)
+    df['Scores'] = df[['MA_Score', 'MACD_Score', 'LL', 'Trender', 'DMI', 'Engulf','RSI_Score', 'Demark']].sum(axis=1)
     df['Extreme Scores'] = df[['RSI_Score', 'LL', 'Engulf', 'Demark']].sum(axis=1)
-    #df[['MA_Score','MACD_Score','Trender', 'DMI','RSI_Score', 'LL', 'Engulf', 'Demark']].sum(axis=1)
-    df['Signal'], df['Extreme Signal'] = df['Scores'].apply(lambda x: assign_signal(x)), df['Extreme Scores'].apply(lambda x: assign_extreme_signal(x))
-    df.rename(columns={'CLOSE': 'PRICE'}, inplace=True)
+    df['Signal'], df['Extreme Signal'] = df.apply(lambda row: assign_signal(row['Scores'], row['Extreme Scores']), axis=1), df['Extreme Scores'].apply(lambda x: assign_extreme_signal(x))
+    df.rename(columns={'CLOSE': 'CURRENT PRICE'}, inplace=True)
+    df['Signal'] = df.apply(lambda row: assign_signal(row['Signal'], row['Extreme Signal']), axis=1)
 
     # Sort the DataFrame by 'Date' column in descending order
     df.sort_values(by='Date', ascending=False, inplace=True)
@@ -236,50 +236,93 @@ def process_data(timeframe, input_file, output_file, merged_data=None):
     print(f"Processed data for {timeframe} saved to {output_file}")
     return merged_data
 
-def assign_signal(score):
-    if score > 6:
-        return 'Strong Buy'
-    elif score == 6:
-        return 'Strong Buy'
-    elif score >= 5.5:
-        return 'Strong Buy'
-    elif score >= 4.5:
-        return 'Buy'
-    elif score >= 3.5:
-        return 'Neutral'
-    elif score >= 2.5:
-        return 'Neutral'
-    elif score >= 1.5:
-        return 'Neutral' if score % 1 == 0.5 else 'Neutral'  # Rounding off positive 0.5 scores
-    elif score >= 0.5:
-        return 'Neutral'
-    elif score >= -0.5:
-        return 'Neutral'
-    elif score >= -1.5:
-        return 'Neutral'
-    elif score >= -2.5:
-        return 'Neutral'
-    elif score >= -3.5:
-        return 'Neutral'
-    elif score >= -4.5:
-        return 'Sell'
-    elif score >= -5.5:
-        return 'Neutral'
-    elif score >= -6:
-        return 'Strong Sell'
-    elif score < -6:
-        return 'Strong Sell'
+def assign_signal(score, extreme_signal):
+    if extreme_signal == 'Reversal':
+        # Reverse the signal assignment if "Reversal" signal is present
+        if isinstance(score, str):  # Check if score is a string
+            return score
+        elif score > 0:
+            return -score
+        elif score < 0:
+            return -score
+        else:
+            return score  # Return the original score if not "Buy" or "Sell"
     else:
-        return 'Neutral'  # Return 'Neutral' for any unexpected score
+        if isinstance(score, str):  # Check if the score is a string
+            return score  
+        else:
+            if score >= 6:
+                return 'Strong Buy'
+            elif score >= 5.5:
+                return 'Buy'
+            elif score >= 5:
+                return 'Buy'
+            elif score >= 4.5:
+                return 'Buy'
+            elif score >= 4:
+                return 'Buy'
+            elif score >= 3.5:
+                return 'Neutral'
+            elif score >= 3:
+                return 'Neutral'
+            elif score >= 2.5:
+                return 'Neutral'
+            elif score >= 2:
+                return 'Neutral'
+            elif score >= 1.5:
+                return 'Neutral'
+            elif score >= 1:
+                return 'Neutral'
+            elif score >= 0.5:
+                return 'Neutral'
+            elif score >= 0:
+                return 'Neutral'
+            elif score >= -0.5:
+                return 'Neutral'
+            elif score >= -1:
+                return 'Neutral'
+            elif score >= -1.5:
+                return 'Neutral'
+            elif score >= -2:
+                return 'Neutral'
+            elif score >= -2.5:
+                return 'Neutral'
+            elif score >= -3:
+                return 'Neutral'
+            elif score >= -3.5:
+                return 'Neutral'
+            elif score >= -4:
+                return 'Sell'
+            elif score >= -4.5:
+                return 'Sell'
+            elif score >= -5:
+                return 'Sell'
+            elif score >= -5.5:
+                return 'Sell'
+            elif score >= -6:
+                return 'Strong Sell'
+            else:
+                return 'Strong Sell'
+
+
 
 def assign_extreme_signal(score):
     global last_extreme_signal
-    if score >= 2.5:
+    if score >= 3:
+        last_extreme_signal = 'OverboughtTriggered'
+        return 'OverboughtTriggered'
+    elif score >= 2.0:
         last_extreme_signal = 'Overbought'
         return 'Overbought'
-    elif score <= -2:
+    elif score <= -3:
+        last_extreme_signal = 'OversoldTriggered'
+        return 'OversoldTriggered'
+    elif score <= -2.0:
         last_extreme_signal = 'Oversold'
         return 'Oversold'
+    elif score == 0:
+        last_extreme_signal = 'Reversal'
+        return 'Reversal'
     else:
         return 'Neutral'
 
@@ -298,29 +341,32 @@ def read_existing_data(filepath):
         else:
             last_date = existing_data['Date'].iloc[-1]  # Get the last date in the existing data
             print(f"Found existing data up to {last_date} in {filepath}.")
-            return existing_data, True  # Return a flag indicating that existing data is found
+            # Delete the existing file
+            os.remove(filepath)
+            print(f"Deleted {filepath}.")
+            return pd.DataFrame(), False  # Return a flag indicating that existing data is found and deleted
     except FileNotFoundError:
         print(f"Existing data file {filepath} not found.")
         return pd.DataFrame(), False  # Return a flag indicating that existing data is not found
     except Exception as e:
         print(f"Error reading existing data file {filepath}: {e}")
-        return pd.DataFrame(), False  # Return a flag indicating that existing data is not found
-    
+        return pd.DataFrame(), False  # Return a flag indicating that an error occurred
+
 async def fetch_calculate_update(input_files, output_files):
     for timeframe, filepath in output_files.items():
         print(f"Output file path for {timeframe}: {filepath}")
         
         existing_data, existing_data_found = read_existing_data(filepath)
         
-        input_data = pd.read_csv(input_files[timeframe])
-        
+        # Check if existing data is not found and delete the output file if it exists
         if not existing_data_found:
-            # If existing data is not found, delete the output file
             try:
                 os.remove(filepath)
                 print(f"Deleted {filepath} as existing data is not found.")
             except FileNotFoundError:
                 pass
+
+        input_data = pd.read_csv(input_files[timeframe])
         
         new_data_available = False
         if not existing_data.empty:
